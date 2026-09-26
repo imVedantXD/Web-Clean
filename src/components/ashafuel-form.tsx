@@ -23,6 +23,7 @@ export function AshaFuelForm() {
   const [customAmount, setCustomAmount] = useState("");
   const [monthly, setMonthly] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [utr, setUtr] = useState("");
   const [receipt, setReceipt] = useState<{ reference: string; amount: number; paymentId: string } | null>(null);
   const [paymentIntent, setPaymentIntent] = useState<{ reference: string; amount: number; upiId: string; upiUrl: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +70,30 @@ export function AshaFuelForm() {
     toast.success("UPI ID copied.");
   }
 
+  async function confirmPayment() {
+    if (!paymentIntent || loading) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const response = await fetch("/api/ashafuel/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference: paymentIntent.reference, utr }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error ?? "We could not record the payment reference.");
+        return;
+      }
+      setReceipt({ reference: data.reference, amount: paymentIntent.amount, paymentId: "Submitted for review" });
+      toast.success("Payment details submitted for review.");
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (receipt) {
     return (
       <div className="card-glow flex min-h-[560px] flex-col justify-between overflow-hidden p-7 sm:p-9">
@@ -76,12 +101,12 @@ export function AshaFuelForm() {
           <span className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30"><CheckCircle2 className="h-7 w-7" /></span>
           <p className="eyebrow">Checkout prepared</p>
           <h2 className="mt-5 font-display text-3xl font-extrabold tracking-tight text-ink">Your support has momentum.</h2>
-          <p className="mt-3 text-sm leading-relaxed text-mute">Your payment of {formatAmount(receipt.amount)} was verified securely. Keep this receipt reference for your records.</p>
+          <p className="mt-3 text-sm leading-relaxed text-mute">Your payment of {formatAmount(receipt.amount)} was submitted. Keep this reference while the transfer is reconciled.</p>
         </div>
         <div className="space-y-4">
           <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-5">
             <div className="flex items-center justify-between gap-4 text-sm"><span className="text-mute">Reference</span><span className="font-mono font-semibold text-ink">{receipt.reference}</span></div>
-            <div className="mt-3 flex items-center justify-between gap-4 text-sm"><span className="text-mute">Payment ID</span><span className="max-w-[190px] truncate font-mono font-semibold text-ink">{receipt.paymentId}</span></div>
+            <div className="mt-3 flex items-center justify-between gap-4 text-sm"><span className="text-mute">Status</span><span className="max-w-[190px] truncate font-semibold text-ink">{receipt.paymentId}</span></div>
           </div>
           <button type="button" onClick={() => setReceipt(null)} className="btn btn-outline w-full py-3!">Start another contribution</button>
         </div>
@@ -106,8 +131,12 @@ export function AshaFuelForm() {
           </div>
           <a href={paymentIntent.upiUrl} className="btn btn-primary w-full py-3!"><Smartphone className="h-4 w-4" />Open UPI app</a>
           <button type="button" onClick={copyUpiId} className="btn btn-outline w-full py-3!"><Clipboard className="h-4 w-4" />Copy UPI ID</button>
-          <button type="button" onClick={() => { setReceipt({ reference: paymentIntent.reference, amount: paymentIntent.amount, paymentId: "UPI transfer submitted" }); toast.success("Thanks. Your contribution has been submitted."); }} className="w-full text-center text-xs font-bold text-mute underline decoration-line underline-offset-4 hover:text-ink">I completed the payment</button>
-          <p className="text-center text-[11px] leading-relaxed text-faint">UPI transfers are confirmed by your bank. This page cannot verify the transfer automatically.</p>
+          <div>
+            <label htmlFor="ashafuel-utr" className="label">Bank UTR / transaction ID</label>
+            <input id="ashafuel-utr" value={utr} onChange={(event) => setUtr(event.target.value)} placeholder="Enter it after payment" maxLength={64} className="input" />
+          </div>
+          <button type="button" disabled={loading || utr.trim().length < 6} onClick={confirmPayment} className="btn btn-outline w-full py-3!">{loading ? "Submitting..." : "Submit payment details"}</button>
+          <p className="text-center text-[11px] leading-relaxed text-faint">Your bank confirms the transfer. The UTR lets your team reconcile it securely.</p>
         </div>
       </div>
     );
@@ -125,7 +154,7 @@ export function AshaFuelForm() {
       <label className="flex cursor-not-allowed items-center justify-between gap-4 rounded-2xl border border-line bg-elev px-4 py-3.5 opacity-70"><span className="flex items-center gap-3"><RefreshCw className="h-4 w-4 text-teal-500" /><span><span className="block text-sm font-bold text-ink">Monthly ripple</span><span className="block text-xs text-mute">Recurring billing is being secured for launch.</span></span></span><input type="checkbox" checked={monthly} disabled aria-label="Monthly ripple unavailable" className="h-5 w-5 accent-emerald-500" /></label>
       <div className="grid gap-4 sm:grid-cols-2"><div><label htmlFor="ashafuel-name" className="label">Your name</label><input id="ashafuel-name" name="name" required minLength={2} maxLength={120} placeholder="Full name" className="input" /></div><div><label htmlFor="ashafuel-email" className="label">Receipt email</label><input id="ashafuel-email" name="email" type="email" required placeholder="you@example.in" className="input" /></div></div>
       <button type="submit" disabled={loading} className="btn btn-primary w-full py-4! text-base"><Smartphone className="h-4 w-4" />{loading ? "Preparing UPI payment..." : `Pay ${formatAmount(selectedAmount)} with UPI`}{!loading && <ArrowRight className="h-4 w-4" />}</button>
-      <p className="flex items-center justify-center gap-2 text-center text-[11px] font-semibold text-faint"><LockKeyhole className="h-3.5 w-3.5" /> Direct bank-app handoff · No Razorpay · No spam</p>
+      <p className="flex items-center justify-center gap-2 text-center text-[11px] font-semibold text-faint"><LockKeyhole className="h-3.5 w-3.5" /> Direct bank-app handoff · No payment gateway · No spam</p>
     </form>
   );
 }

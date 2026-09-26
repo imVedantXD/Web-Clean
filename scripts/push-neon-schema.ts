@@ -20,12 +20,15 @@ const statements = [
   `CREATE TABLE IF NOT EXISTS campaign_signups (id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL, campaign_id uuid NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE, user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE, message text, status varchar(20) DEFAULT 'joined' NOT NULL, created_at timestamptz DEFAULT now() NOT NULL, UNIQUE(campaign_id, user_id))`,
   `CREATE TABLE IF NOT EXISTS contact_messages (id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL, name varchar(120) NOT NULL, email varchar(255) NOT NULL, subject varchar(200) NOT NULL, message text NOT NULL, created_at timestamptz DEFAULT now() NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS newsletter_subscribers (id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL, email varchar(255) NOT NULL UNIQUE, created_at timestamptz DEFAULT now() NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS payment_intents (id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL, reference varchar(40) NOT NULL UNIQUE, donor_name varchar(120) NOT NULL, donor_email varchar(255) NOT NULL, amount integer NOT NULL, upi_id varchar(255) NOT NULL, status varchar(20) DEFAULT 'pending' NOT NULL, utr varchar(64) UNIQUE, created_at timestamptz DEFAULT now() NOT NULL, expires_at timestamptz NOT NULL, submitted_at timestamptz)`,
   `CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions(user_id)`,
   `CREATE INDEX IF NOT EXISTS verification_email_idx ON verification_codes(email)`,
   `CREATE INDEX IF NOT EXISTS campaigns_category_idx ON campaigns(category)`,
   `CREATE INDEX IF NOT EXISTS campaigns_city_idx ON campaigns(city)`,
   `CREATE INDEX IF NOT EXISTS campaigns_start_idx ON campaigns(start_at)`,
   `CREATE INDEX IF NOT EXISTS signup_user_idx ON campaign_signups(user_id)`,
+  `CREATE INDEX IF NOT EXISTS payment_intents_status_idx ON payment_intents(status)`,
+  `CREATE INDEX IF NOT EXISTS payment_intents_email_idx ON payment_intents(donor_email)`,
 ];
 
 async function main() {

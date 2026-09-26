@@ -18,19 +18,15 @@ export function VerifyForm({ email }: { email: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
-  const [previewCode, setPreviewCode] = useState<string | null>(null);
+  const [previewCode, setPreviewCode] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem(`sahayata_preview:${email}`);
+    } catch {
+      return null;
+    }
+  });
   const refs = useRef<Array<HTMLInputElement | null>>([]);
   const submittedRef = useRef(false);
-
-  // Load any sandbox-delivered code saved by the signup/signin flow.
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(`sahayata_preview:${email}`);
-      if (saved) setPreviewCode(saved);
-    } catch {
-      /* ignore */
-    }
-  }, [email]);
 
   useEffect(() => {
     if (cooldown <= 0) return;

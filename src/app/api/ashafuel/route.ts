@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { db } from "@/db";
+import { paymentIntents } from "@/db/schema";
 import { assertSameOrigin } from "@/lib/auth";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
 import { sanitizeText } from "@/lib/utils";
@@ -42,12 +44,19 @@ export async function POST(req: Request) {
     tr: reference,
   }).toString();
 
-  console.info("AshaFuel UPI intent created", {
-    reference,
-    amount: parsed.data.amount,
-    donorEmail: parsed.data.email,
-    donorName: sanitizeText(parsed.data.name).slice(0, 120),
-  });
+  try {
+    await db.insert(paymentIntents).values({
+      reference,
+      donorName: sanitizeText(parsed.data.name).slice(0, 120),
+      donorEmail: parsed.data.email.toLowerCase(),
+      amount: parsed.data.amount,
+      upiId,
+      expiresAt: new Date(Date.now() + 30 * 60_000),
+    });
+  } catch (error) {
+    console.error("AshaFuel payment intent persistence failed", error);
+    return NextResponse.json({ error: "Payment could not be prepared. Please try again." }, { status: 503 });
+  }
 
   return NextResponse.json({ ok: true, amount: parsed.data.amount, currency: "INR", reference, upiId, upiUrl: upiUrl.toString() });
 }

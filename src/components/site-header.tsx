@@ -38,7 +38,7 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => setOpen(false), [pathname]);
+  const closeMenu = () => setOpen(false);
 
   return (
     <header
@@ -63,6 +63,7 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
             <Link
               key={l.href}
               href={l.href}
+              onClick={closeMenu}
               className={cn("nav-link", pathname === l.href && "active")}
             >
               {l.label}
@@ -142,6 +143,7 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
                 <Link
                   key={l.href}
                   href={l.href}
+                  onClick={closeMenu}
                   className={cn("nav-link !py-3", pathname === l.href && "active")}
                 >
                   {l.label}

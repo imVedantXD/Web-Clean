@@ -214,6 +214,31 @@ export const newsletterSubscribers = pgTable(
   (t) => [uniqueIndex("newsletter_email_unique").on(t.email)]
 );
 
+/* ------------------------------ AshaFuel --------------------------------- */
+
+export const paymentIntents = pgTable(
+  "payment_intents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    reference: varchar("reference", { length: 40 }).notNull(),
+    donorName: varchar("donor_name", { length: 120 }).notNull(),
+    donorEmail: varchar("donor_email", { length: 255 }).notNull(),
+    amount: integer("amount").notNull(),
+    upiId: varchar("upi_id", { length: 255 }).notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    utr: varchar("utr", { length: 64 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("payment_intents_reference_unique").on(t.reference),
+    uniqueIndex("payment_intents_utr_unique").on(t.utr),
+    index("payment_intents_status_idx").on(t.status),
+    index("payment_intents_email_idx").on(t.donorEmail),
+  ]
+);
+
 /* -------------------------------- Relations -------------------------------- */
 
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -246,3 +271,4 @@ export const campaignSignupsRelations = relations(campaignSignups, ({ one }) => 
 export type User = typeof users.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
 export type VolunteerProfile = typeof volunteerProfiles.$inferSelect;
+export type PaymentIntent = typeof paymentIntents.$inferSelect;
