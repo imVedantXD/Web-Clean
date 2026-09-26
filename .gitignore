@@ -5,3 +5,5 @@
 *.log
 .DS_Store
 .neon
+node_modules/
+.DS_Store
