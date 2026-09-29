@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Sparkles,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 
 const AMOUNTS = [250, 500, 1000, 2500];
@@ -55,8 +56,7 @@ export function AshaFuelForm() {
         return;
       }
       setPaymentIntent({ reference: data.reference, amount: data.amount, upiId: data.upiId, upiUrl: data.upiUrl });
-      toast.success("Opening your UPI app...");
-      window.setTimeout(() => window.location.assign(data.upiUrl), 100);
+      toast.success("UPI payment is ready.");
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -121,9 +121,13 @@ export function AshaFuelForm() {
           <span className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30"><Smartphone className="h-7 w-7" /></span>
           <p className="eyebrow">UPI payment ready</p>
           <h2 className="mt-5 font-display text-3xl font-extrabold tracking-tight text-ink">Choose your UPI app.</h2>
-          <p className="mt-3 text-sm leading-relaxed text-mute">Your phone should open its available UPI apps. Select Paytm, Google Pay, PhonePe, or another UPI app and approve the payment there.</p>
+          <p className="mt-3 text-sm leading-relaxed text-mute">Scan this code with a UPI app, or tap below to open one installed on this device.</p>
         </div>
         <div className="space-y-4">
+          <div className="mx-auto w-fit rounded-xl bg-white p-3">
+            <QRCodeSVG value={paymentIntent.upiUrl} size={192} level="M" marginSize={1} />
+          </div>
+          <p className="text-center text-xs text-mute">On a computer? Scan with your phone camera or UPI app.</p>
           <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-5">
             <div className="flex items-center justify-between gap-4 text-sm"><span className="text-mute">Amount</span><span className="font-semibold text-ink">{formatAmount(paymentIntent.amount)}</span></div>
             <div className="mt-3 flex items-center justify-between gap-4 text-sm"><span className="text-mute">UPI ID</span><span className="max-w-[190px] truncate font-mono font-semibold text-ink">{paymentIntent.upiId}</span></div>
